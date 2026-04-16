@@ -1,7 +1,13 @@
 import { AuthProvider } from "./context/AuthContext";
-import { Outlet } from "react-router";
+import { 
+  Outlet, 
+  Links, 
+  Meta, 
+  Scripts, 
+  ScrollRestoration 
+} from "react-router";
 import type { Route } from "./+types/root";
-import "./app.css"; // Global styles (if any)
+import "./app.css";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -16,7 +22,24 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-// ... existing meta/links/Layout code ...
+// The Layout acts as the root HTML shell
+export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta />
+        <Links /> {/* This injects your fonts and app.css */}
+      </head>
+      <body>
+        {children}
+        <ScrollRestoration />
+        <Scripts /> {/* Injects React Router client-side scripts */}
+      </body>
+    </html>
+  );
+}
 
 export default function App() {
   return (
