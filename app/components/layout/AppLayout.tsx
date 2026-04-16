@@ -7,7 +7,7 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import UnauthorizedPage from "../../pages/UnauthorizedPage";
 
-export function AppLayout() {
+export default function AppLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
