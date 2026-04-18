@@ -17,7 +17,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/orders": "Orders",
   "/menu": "Menu",
-  "/inventory": "Inventory",
+  "/inventory": "Inventory Overview",
   "/staff": "Staff",
   "/reports": "Reports",
 };

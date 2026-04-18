@@ -72,7 +72,7 @@ export default function DashboardPage() {
         <StatCard
           label="Low Stock Items"
           value="3"
-          sub="Needs restocking"
+          sub="Needs attention"
           icon="📦"
           trend={-1}
         />

@@ -67,8 +67,9 @@ export function Sidebar({ route, navigate, user }: SidebarProps) {
       <nav style={{ flex: 1, padding: "0 10px" }}>
         {NAV_ITEMS.filter((item) => allowed.includes(item.key)).map((item) => {
           const active =
+            (item.route === "/dashboard" && (route === "/" || route === "/dashboard")) ||
             route === item.route ||
-            (route === "/" && item.route === "/dashboard");
+            (item.route !== "/dashboard" && route.startsWith(`${item.route}/`));
           return (
             <div
               key={item.key}

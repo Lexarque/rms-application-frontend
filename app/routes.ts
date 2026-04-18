@@ -14,7 +14,11 @@ export default [
     index("pages/DashboardPage.tsx"), // Only "/"
     route("orders", "pages/OrdersPage.tsx"),
     route("menu", "pages/MenuPage.tsx"),
-    route("inventory", "pages/InventoryPage.tsx"),
+    route("inventory", "pages/inventory/InventoryPage.tsx"),
+    route("inventory/movements", "pages/inventory/InventoryMovementsPage.tsx"),
+    route("inventory/reorders", "pages/inventory/InventoryReordersPage.tsx"),
+    route("inventory/items/:id", "pages/inventory/InventoryItemDetailPage.tsx"),
+    route("inventory/alerts", "pages/inventory/InventoryAlertsPage.tsx"),
     route("staff", "pages/StaffPage.tsx"),
     route("reports", "pages/ReportsPage.tsx"),
   ]),

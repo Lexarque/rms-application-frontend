@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router";
 import { C, font } from "../theme/tokens";
 import { SectionHeader } from "../components/ui/SectionHeader";
 import { Btn } from "../components/ui/Button";
@@ -8,6 +9,7 @@ interface ReportCardData {
   label: string;
   icon: string;
   desc: string;
+  route?: string;
 }
 
 // Extracted outside the component for better performance
@@ -16,11 +18,6 @@ const REPORT_CARDS: ReportCardData[] = [
     label: "Sales Report",
     icon: "💰",
     desc: "Daily, weekly, monthly revenue breakdown",
-  },
-  {
-    label: "Inventory Report",
-    icon: "📦",
-    desc: "Stock levels and depletion history",
   },
   {
     label: "Order History",
@@ -35,6 +32,8 @@ const REPORT_CARDS: ReportCardData[] = [
 ];
 
 export default function ReportsPage() {
+  const navigate = useNavigate();
+
   return (
     <div>
       <SectionHeader
@@ -77,7 +76,12 @@ export default function ReportsPage() {
               {r.desc}
             </div>
             <div style={{ marginTop: 16 }}>
-              <Btn variant="ghost" size="sm">
+              <Btn
+                variant="ghost"
+                size="sm"
+                onClick={() => r.route && navigate(r.route)}
+                disabled={!r.route}
+              >
                 View Report
               </Btn>
             </div>
