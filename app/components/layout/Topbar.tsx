@@ -5,7 +5,7 @@ import { Btn } from "../ui/Button";
 interface TopbarProps {
   title: string;
   user: {
-    name: string;
+    username: string;
     role: string;
   };
   onLogout: () => void;

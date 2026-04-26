@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { User } from "../types";
+import { api } from "../lib/axios"; // your axios instance
 
 interface LoginResult {
   success: boolean;
@@ -9,17 +10,11 @@ interface LoginResult {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (u: string, p: string) => LoginResult;
+  login: (u: string, p: string) => Promise<LoginResult>; // now async
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-
-const MOCK_USERS: Record<string, User & { password: string }> = {
-  admin: { username: "admin", password: "admin123", role: "Manager", name: "Ahmad Zulkifli" },
-  staff: { username: "staff", password: "staff123", role: "Staff", name: "Siti Norzahra" },
-  kitchen: { username: "kitchen", password: "kitchen123", role: "Kitchen", name: "Razif Hamdan" },
-};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -31,22 +26,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = (username: string, password: string): LoginResult => {
-    const found = Object.values(MOCK_USERS).find(
-      (u) => u.username === username && u.password === password
-    );
-    if (found) {
-      const userData: User = { username: found.username, role: found.role, name: found.name };
-      setUser(userData);
+  const login = async (username: string, password: string): Promise<LoginResult> => {
+    try {
+      const { data } = await api.post("/auth/login", { username, password });
+      ;
+      const userData: User = {
+        username: data.username,
+        role: data.role,
+      };
+
+      localStorage.setItem("token", data.token);          // for axios interceptor
       localStorage.setItem("rms_user", JSON.stringify(userData));
+      setUser(userData);
+
       return { success: true };
+    } catch (err: any) {
+      console.log("Login error:", err);
+      // Axios wraps HTTP errors — pull the message from the response body
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Invalid username or password.";
+
+      return { success: false, message };
     }
-    return { success: false, message: "Invalid username or password." };
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("rms_user");
+    localStorage.removeItem("token");
   };
 
   return (
