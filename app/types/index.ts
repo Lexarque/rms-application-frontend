@@ -3,7 +3,6 @@ export type Role = "Manager" | "Staff" | "Kitchen";
 export interface User {
   username: string;
   role: Role;
-  name: string;
 }
 
 export interface NavItem {

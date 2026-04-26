@@ -6,7 +6,7 @@ interface SidebarProps {
   route: string;
   navigate: (path: string) => void;
   user: {
-    name: string;
+    username: string;
     role: string;
   };
 }
@@ -119,7 +119,7 @@ export function Sidebar({ route, navigate, user }: SidebarProps) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Avatar name={user.name} size={30} />
+          <Avatar name={user.username} size={30} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
@@ -132,7 +132,7 @@ export function Sidebar({ route, navigate, user }: SidebarProps) {
                 textOverflow: "ellipsis",
               }}
             >
-              {user.name}
+              {user.username}
             </div>
             <div
               style={{ fontSize: 10, color: "#888880", fontFamily: font.body }}

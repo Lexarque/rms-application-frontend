@@ -8,11 +8,12 @@ import { Topbar } from "./Topbar";
 import UnauthorizedPage from "../../pages/UnauthorizedPage";
 
 export default function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // If there's no user, redirect to login immediately
+  if (loading) return null;
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }

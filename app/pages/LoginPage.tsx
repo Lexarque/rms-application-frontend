@@ -16,13 +16,15 @@ export default function LoginPage() {
   const handleSubmit = async () => {
     setError("");
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const result = login(username, password);
+
+    const result = await login(username, password);
+
     if (!result.success) {
-      setError(result.message || "Error")
+      setError(result.message || "Something went wrong.");
     } else {
       navigate("/", { replace: true });
-    };
+    }
+      
     setLoading(false);
   };
 
