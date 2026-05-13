@@ -6,7 +6,6 @@ export const api = axios.create({
     "Content-Type": "application/json",
   }
 });
-console.log("API base URL:", api.defaults.baseURL);
 // ── Request interceptor ──────────────────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {

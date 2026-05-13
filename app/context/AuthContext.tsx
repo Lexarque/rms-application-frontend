@@ -41,7 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true };
     } catch (err: any) {
-      console.log("Login error:", err);
       // Axios wraps HTTP errors — pull the message from the response body
       const message =
         err.response?.data?.message ||

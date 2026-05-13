@@ -5,26 +5,28 @@ interface TableProps {
   columns: string[];
   rows: React.ReactNode[][];
   emptyMessage?: string;
+  onRowClick?: (rowIndex: number) => void; // Add this
 }
 
-export function Table({ columns, rows, emptyMessage = "No data." }: TableProps) {
+export function Table({ columns, rows, emptyMessage = "No data.", onRowClick }: TableProps) {
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: font.body, fontSize: 13 }}>
         <thead>
-          <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-            {columns.map((col, i) => (
-              <th key={i} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 500, color: C.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                {col}
-              </th>
-            ))}
-          </tr>
+          {/* ...unchanged... */}
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr><td colSpan={columns.length} style={{ padding: 24, textAlign: "center", color: C.muted }}>{emptyMessage}</td></tr>
           ) : rows.map((row, i) => (
-            <tr key={i} style={{ borderBottom: `0.5px solid ${C.border}` }}>
+            <tr
+              key={i}
+              onClick={() => onRowClick?.(i)}
+              style={{
+                borderBottom: `0.5px solid ${C.border}`,
+                cursor: onRowClick ? "pointer" : "default", // Only show pointer if clickable
+              }}
+            >
               {row.map((cell, j) => (
                 <td key={j} style={{ padding: "12px 14px", color: C.text }}>{cell}</td>
               ))}

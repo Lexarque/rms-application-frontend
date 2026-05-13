@@ -1,11 +1,12 @@
 export const ROLE_ACCESS: Record<string, string[]> = {
-  Manager: ["dashboard", "menu", "orders", "inventory", "staff", "reports"],
-  Staff: ["dashboard", "menu", "orders"],
-  Kitchen: ["dashboard", "orders"],
+  admin: ["dashboard", "menu", "orders", "inventory", "staff", "reports"],
+  manager: ["dashboard", "menu", "orders", "inventory", "staff", "reports"],
+  staff: ["dashboard", "menu", "orders"],
+  kitchen: ["dashboard", "orders"],
 };
 
 export const NAV_ITEMS = [
-  { key: "dashboard", label: "Dashboard", icon: "⊞", route: "/dashboard" },
+  { key: "dashboard", label: "Dashboard", icon: "⊞", route: "/" },
   { key: "orders", label: "Orders", icon: "📋", route: "/orders" },
   { key: "menu", label: "Menu", icon: "🍽", route: "/menu" },
   { key: "inventory", label: "Inventory", icon: "📦", route: "/inventory" },
@@ -14,7 +15,7 @@ export const NAV_ITEMS = [
 ];
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Dashboard",
+  "/": "Dashboard",
   "/orders": "Orders",
   "/menu": "Menu",
   "/inventory": "Inventory",
