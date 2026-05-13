@@ -68,7 +68,7 @@ export function Sidebar({ route, navigate, user }: SidebarProps) {
         {NAV_ITEMS.filter((item) => allowed.includes(item.key)).map((item) => {
           const active =
             route === item.route ||
-            (route === "/" && item.route === "/dashboard");
+            (route === "/" && item.route === "/");
           return (
             <div
               key={item.key}

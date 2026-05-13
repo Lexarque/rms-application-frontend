@@ -15,7 +15,10 @@ export default [
     route("orders", "pages/OrdersPage.tsx"),
     route("menu", "pages/MenuPage.tsx"),
     route("inventory", "pages/InventoryPage.tsx"),
-    route("staff", "pages/StaffPage.tsx"),
+    route("staff", "pages/staff/StaffPage.tsx"),
     route("reports", "pages/ReportsPage.tsx"),
+    route("staff/add", "pages/staff/AddStaffPage.tsx"),
+    route("staff/:id", "pages/staff/StaffDetailPage.tsx"),
+    route("staff/:id/edit", "pages/staff/EditStaffPage.tsx"),
   ]),
 ] satisfies RouteConfig;
