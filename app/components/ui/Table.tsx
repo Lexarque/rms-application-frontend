@@ -13,7 +13,24 @@ export function Table({ columns, rows, emptyMessage = "No data.", onRowClick }: 
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: font.body, fontSize: 13 }}>
         <thead>
-          {/* ...unchanged... */}
+          <tr style={{ borderBottom: `0.5px solid ${C.border}`, background: "#FAFAF8" }}>
+            {columns.map((column) => (
+              <th
+                key={column}
+                style={{
+                  padding: "10px 14px",
+                  textAlign: "left",
+                  fontSize: 12,
+                  color: C.muted,
+                  fontWeight: 600,
+                  letterSpacing: "0.2px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {column}
+              </th>
+            ))}
+          </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
