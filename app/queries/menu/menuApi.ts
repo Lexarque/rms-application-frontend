@@ -1,8 +1,4 @@
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "http://localhost:8080/api/menu",
-});
+import { api } from "../../lib/axios";
 
 /* =========================
    TYPES
@@ -52,27 +48,27 @@ export async function fetchMenuItems(params?: {
   size?: number;
   sort?: string;
 }): Promise<MenuItem[]> {
-  const res = await api.get("/", { params });
+  const res = await api.get("/menu", { params });
   return res.data;
 }
 
 export async function fetchMenuItem(id: string): Promise<MenuItem> {
-  const res = await api.get(`/${id}`);
+  const res = await api.get(`/menu/${id}`);
   return res.data;
 }
 
 export async function createMenuItem(data: CreateMenuItemRequest) {
-  const res = await api.post("/", data);
+  const res = await api.post("/menu", data);
   return res.data;
 }
 
 export async function updateMenuItem(id: string, data: UpdateMenuItemRequest) {
-  const res = await api.put(`/${id}`, data);
+  const res = await api.put(`/menu/${id}`, data);
   return res.data;
 }
 
 export async function deleteMenuItem(id: string) {
-  await api.delete(`/${id}`);
+  await api.delete(`/menu/${id}`);
 }
 
 /* =========================
@@ -80,7 +76,7 @@ export async function deleteMenuItem(id: string) {
 ========================= */
 
 export async function fetchMenuIngredients(menuId: string) {
-  const res = await api.get(`/${menuId}/ingredients`);
+  const res = await api.get(`/menu/${menuId}/ingredients`);
   return res.data;
 }
 
@@ -91,7 +87,7 @@ export async function addMenuIngredient(
     quantity_required: number;
   }
 ) {
-  const res = await api.post(`/${menuId}/ingredients`, data);
+  const res = await api.post(`/menu/${menuId}/ingredients`, data);
   return res.data;
 }
 
@@ -99,5 +95,5 @@ export async function deleteMenuIngredient(
   menuId: string,
   ingredientId: string
 ) {
-  await api.delete(`/${menuId}/ingredients/${ingredientId}`);
+  await api.delete(`/menu/${menuId}/ingredients/${ingredientId}`);
 }
