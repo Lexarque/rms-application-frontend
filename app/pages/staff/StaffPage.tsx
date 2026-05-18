@@ -161,7 +161,7 @@ export default function StaffPage() {
                 Showing {staffList.length} of {data?.filteredRecords || 0}{" "}
                 results
               </span>
-              <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ display: "flex" }}>
                 <Btn
                   variant="ghost"
                   size="sm"
@@ -170,7 +170,7 @@ export default function StaffPage() {
                 >
                   Previous
                 </Btn>
-                <span style={{ padding: "5px 10px" }}>
+                <span style={{ padding: "5px 10px", color: C.muted }}>
                   Page {page + 1} of {totalPages || 1}
                 </span>
                 <Btn

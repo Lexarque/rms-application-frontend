@@ -235,7 +235,7 @@ export default function MenuPage() {
 
             {/* CONTENT */}
             <div style={{ padding: 14, flex: 1 }}>
-              <h3 style={{ margin: 0 }}>
+              <h3 style={{ margin: 0, color: C.text }}>
                 {item.itemName || "Unnamed Item"}
               </h3>
 
@@ -250,7 +250,9 @@ export default function MenuPage() {
                   marginTop: 10,
                 }}
               >
-                <strong>RM {item.price.toFixed(2)}</strong>
+                <strong style={{ color: C.text }}>
+                  RM {item.price.toFixed(2)}
+                </strong>
 
                 <Badge
                   label={statusOf(item)}
@@ -390,8 +392,8 @@ export default function MenuPage() {
                 }))
               }
             />
-            <label style={{ fontWeight: 500 }}>
-              Available (Menu Status)
+            <label style={{ fontWeight: 500, color: "#333" }}>
+              Is Available?
             </label>
           </div>
 
