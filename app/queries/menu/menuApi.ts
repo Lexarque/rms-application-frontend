@@ -6,34 +6,34 @@ import { api } from "../../lib/axios";
 
 export interface MenuItem {
   id: string;
-  item_name: string;
+  itemName: string;
   description?: string;
   price: number;
-  image_url?: string;
-  is_available: boolean;
-  last_updated?: string;
+  imageUrl?: string;
+  isAvailable: boolean;
+  lastUpdated?: string;
 }
 
 export interface CreateMenuItemRequest {
-  item_name: string;
+  itemName: string;
   description?: string;
   price: number;
-  image_url?: string;
-  is_available?: boolean;
+  imageUrl?: string;
+  isAvailable?: boolean;
 }
 
 export interface UpdateMenuItemRequest {
-  item_name: string;
+  itemName: string;
   description?: string;
   price: number;
-  image_url?: string;
-  is_available?: boolean;
+  imageUrl?: string;
+  isAvailable?: boolean;
 }
 
 export interface MenuIngredient {
   id: string;
   inventory_item_id: string;
-  inventory_item_name: string;
+  inventory_itemName: string;
   quantity_required: number;
 }
 
