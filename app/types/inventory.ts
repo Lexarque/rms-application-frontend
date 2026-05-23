@@ -1,6 +1,6 @@
 export type InventoryStatus = "AVAILABLE" | "LOW" | "OUT";
 export type StatusFilter = "ALL" | InventoryStatus;
-export type InventoryTab = "catalog" | "movement" | "alerts";
+export type InventoryTab = "catalog" | "movement";
 export type MovementType = "IN" | "OUT" | "ADJUST";
 
 export interface InventoryItem {
@@ -45,8 +45,8 @@ export interface DraftItem {
   item_name: string;
   category: string;
   unit: string;
-  quantity: number;
-  minimum_threshold: number;
+  quantity: number | "";
+  minimum_threshold: number | "";
 }
 
 export interface InventoryItemApi {
