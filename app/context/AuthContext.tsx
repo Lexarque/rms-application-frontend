@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { User } from "../types";
-import { api } from "../lib/axios"; // your axios instance
+import { api } from "../lib/axios";
 
-interface LoginResult {
+interface AuthResult {
   success: boolean;
   message?: string;
 }
@@ -10,7 +10,8 @@ interface LoginResult {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (u: string, p: string) => Promise<LoginResult>; // now async
+  login: (username: string, password: string) => Promise<AuthResult>;
+  register: (username: string, password: string, fullName: string, phoneNumber?: string) => Promise<AuthResult>;
   logout: () => void;
 }
 
@@ -26,27 +27,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = async (username: string, password: string): Promise<LoginResult> => {
+  const handleAuthResponse = (data: any) => {
+    const userData: User = {
+      id: data.id,
+      username: data.username,
+      role: data.role,
+    };
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("rms_user", JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  const login = async (username: string, password: string): Promise<AuthResult> => {
     try {
       const { data } = await api.post("/auth/login", { username, password });
-      ;
-      const userData: User = {
-        username: data.username,
-        role: data.role,
-      };
-
-      localStorage.setItem("token", data.token);          // for axios interceptor
-      localStorage.setItem("rms_user", JSON.stringify(userData));
-      setUser(userData);
-
+      handleAuthResponse(data);
       return { success: true };
     } catch (err: any) {
-      // Axios wraps HTTP errors — pull the message from the response body
       const message =
         err.response?.data?.message ||
         err.response?.data?.error ||
         "Invalid username or password.";
+      return { success: false, message };
+    }
+  };
 
+  const register = async (
+    username: string,
+    password: string,
+    fullName: string,
+    phoneNumber?: string
+  ): Promise<AuthResult> => {
+    try {
+      const { data } = await api.post("/auth/register", {
+        username,
+        password,
+        fullName,
+        phoneNumber,
+      });
+      handleAuthResponse(data);
+      return { success: true };
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Registration failed. Please try again.";
       return { success: false, message };
     }
   };
@@ -58,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

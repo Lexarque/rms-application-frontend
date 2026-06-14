@@ -49,15 +49,7 @@ export async function fetchMenuItems(params?: {
   sort?: string;
 }): Promise<MenuItem[]> {
   const res = await api.get("/menu", { params });
-  return res.data.map((item: any) => ({
-    id: item.id,
-    itemName: item.item_name,
-    description: item.description,
-    price: Number(item.price),
-    imageUrl: item.image_url,
-    isAvailable: item.is_available,
-    lastUpdated: item.last_updated,
-  }));
+  return res.data;
 }
 
 export async function fetchMenuItem(id: string): Promise<MenuItem> {

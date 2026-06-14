@@ -1,13 +1,4 @@
-export type Role = "Manager" | "Staff" | "Kitchen";
-
-export interface User {
-  username: string;
-  role: Role;
-}
-
-export interface NavItem {
-  key: string;
-  label: string;
-  icon: string;
-  route: string;
-}
+export type { Role } from "./role";
+export { STAFF_ROLES } from "./role";
+export type { User } from "./user";
+export type { NavItem } from "./nav";

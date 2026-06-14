@@ -11,6 +11,7 @@ import "./app.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/query-client";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { OrderSessionProvider } from "./context/OrderSessionContext";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -49,7 +50,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Outlet />
+        <OrderSessionProvider>
+          <Outlet />
+        </OrderSessionProvider>
       </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

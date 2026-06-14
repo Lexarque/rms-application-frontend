@@ -1,17 +1,14 @@
-/* app.css */
 @import "tailwindcss";
+
 @layer base {
-  /* disable preflight font override */
   *, ::before, ::after {
     font-family: inherit;
   }
 
   html, body {
     font-family: 'DM Sans', system-ui, sans-serif;
-    @apply bg-white dark:bg-gray-950;
-    @media (prefers-color-scheme: dark) {
-      color-scheme: dark;
-    }
+    background-color: #FAFAF8;
+    color: #1C1C1A;
   }
 }
 
