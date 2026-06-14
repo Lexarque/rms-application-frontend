@@ -3,7 +3,7 @@ import { C, font } from "../theme/tokens";
 import { Input } from "../components/ui/Input";
 import { Btn } from "../components/ui/Button";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -16,15 +16,12 @@ export default function LoginPage() {
   const handleSubmit = async () => {
     setError("");
     setLoading(true);
-
     const result = await login(username, password);
-
     if (!result.success) {
       setError(result.message || "Something went wrong.");
     } else {
       navigate("/", { replace: true });
     }
-      
     setLoading(false);
   };
 
@@ -92,7 +89,6 @@ export default function LoginPage() {
             placeholder="••••••••"
             required
           />
-
           {error && (
             <div
               style={{
@@ -106,7 +102,6 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-
           <Btn
             onClick={handleSubmit}
             disabled={loading || !username || !password}
@@ -114,6 +109,24 @@ export default function LoginPage() {
             {loading ? "Signing in…" : "Sign in"}
           </Btn>
         </div>
+
+        <p
+          style={{
+            fontFamily: font.body,
+            fontSize: 13,
+            color: C.muted,
+            textAlign: "center",
+            marginTop: 24,
+          }}
+        >
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            style={{ color: C.accent, textDecoration: "none", fontWeight: 500 }}
+          >
+            Register here
+          </Link>
+        </p>
       </div>
     </div>
   );
