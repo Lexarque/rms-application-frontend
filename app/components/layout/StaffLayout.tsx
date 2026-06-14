@@ -1,12 +1,13 @@
 import React from "react";
 import { Outlet } from "react-router";
 import { RoleGuard } from "./RoleGuard";
+import type { Role } from "~/types/role";
 
-const STAFF_ROLES = ["admin", "manager", "staff"];
+const ALLOWED: Role[] = ["admin", "manager", "staff"];
 
 export default function StaffLayout() {
   return (
-    <RoleGuard allowed={STAFF_ROLES}>
+    <RoleGuard allowed={ALLOWED}>
       <Outlet />
     </RoleGuard>
   );
