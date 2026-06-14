@@ -20,7 +20,9 @@ export default function LoginPage() {
     if (!result.success) {
       setError(result.message || "Something went wrong.");
     } else {
-      navigate("/", { replace: true });
+      navigate(result.role === "customer" ? "/order/table" : "/", {
+        replace: true,
+      });
     }
     setLoading(false);
   };

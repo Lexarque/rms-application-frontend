@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { C } from "../theme/tokens";
+import { C, font } from "../theme/tokens";
 import { SectionHeader } from "../components/ui/SectionHeader";
 import { Badge } from "../components/ui/Badge";
 import { Btn } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
+import { useAuth } from "../context/AuthContext";
 
 import {
   fetchMenuItems,
@@ -12,6 +13,11 @@ import {
   updateMenuItem,
   deleteMenuItem,
   fetchMenuIngredients,
+  type MenuCategory,
+  type MenuIngredient,
+  CATEGORY_LABELS,
+  CATEGORY_ICONS,
+  MENU_CATEGORIES,
 } from "../queries/menu/menuApi";
 
 type MenuStatus = "AVAILABLE" | "UNAVAILABLE";
@@ -21,20 +27,16 @@ interface MenuItem {
   itemName: string;
   description?: string;
   price: number;
+  category?: MenuCategory;
   imageUrl?: string;
   isAvailable: boolean;
-}
-
-interface MenuIngredient {
-  id: string;
-  inventory_itemName: string;
-  quantity_required: number;
 }
 
 type Draft = {
   itemName: string;
   description: string;
   price: number;
+  category: MenuCategory;
   imageUrl: string;
   isAvailable: boolean;
 };
@@ -43,6 +45,7 @@ const EMPTY_DRAFT: Draft = {
   itemName: "",
   description: "",
   price: 0,
+  category: "FOOD",
   imageUrl: "",
   isAvailable: true,
 };
@@ -52,6 +55,8 @@ function statusOf(item: MenuItem): MenuStatus {
 }
 
 export default function MenuPage() {
+  const { user } = useAuth();
+
   const [items, setItems] = useState<MenuItem[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
 
@@ -64,8 +69,8 @@ export default function MenuPage() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const selectedItem =
-    items.find((i) => i.id === selectedId) ?? null;
+  const selectedItem = items.find((i) => i.id === selectedId) ?? null;
+  const canManageMenu = user?.role === "admin" || user?.role === "manager";
 
   /* ================= LOAD ================= */
   useEffect(() => {
@@ -101,6 +106,7 @@ export default function MenuPage() {
           itemName: draft.itemName,
           description: draft.description,
           price: draft.price,
+          category: draft.category,
           imageUrl: draft.imageUrl,
           isAvailable: draft.isAvailable,
         });
@@ -112,14 +118,13 @@ export default function MenuPage() {
           itemName: draft.itemName,
           description: draft.description,
           price: draft.price,
+          category: draft.category,
           imageUrl: draft.imageUrl,
           isAvailable: draft.isAvailable,
         });
 
         setItems((prev) =>
-          prev.map((i) =>
-            i.id === selectedItem.id ? updated : i
-          )
+          prev.map((i) => (i.id === selectedItem.id ? updated : i)),
         );
       }
 
@@ -151,9 +156,9 @@ export default function MenuPage() {
   const openIngredients = async (id: string) => {
     try {
       setSelectedId(id);
-
       const data = await fetchMenuIngredients(id);
 
+      // ✅ No cast needed if fetchMenuIngredients is typed properly in menuApi.ts
       setIngredients(Array.isArray(data) ? data : []);
       setShowIngredientsModal(true);
     } catch {
@@ -167,30 +172,29 @@ export default function MenuPage() {
         title="Menu Management"
         subtitle="Manage menu items and ingredients"
         action={
-          <Btn
-            onClick={() => {
-              setDraftMode("add");
-              setDraft(EMPTY_DRAFT);
-              setShowModal(true);
-            }}
-          >
-            + Add Item
-          </Btn>
+          canManageMenu && (
+            <Btn
+              onClick={() => {
+                setDraftMode("add");
+                setDraft(EMPTY_DRAFT);
+                setShowModal(true);
+              }}
+            >
+              + Add Item
+            </Btn>
+          )
         }
       />
 
       {errorMessage && (
-        <div style={{ color: "red", marginBottom: 12 }}>
-          {errorMessage}
-        </div>
+        <div style={{ color: "red", marginBottom: 12 }}>{errorMessage}</div>
       )}
 
       {/* ================= CARDS ================= */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fill, minmax(260px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
           gap: 20,
         }}
       >
@@ -247,19 +251,33 @@ export default function MenuPage() {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
+                  alignItems: "center",
                   marginTop: 10,
                 }}
               >
                 <strong style={{ color: C.text }}>
                   RM {item.price.toFixed(2)}
                 </strong>
-
-                <Badge
-                  label={statusOf(item)}
-                  color={
-                    item.isAvailable ? "success" : "danger"
-                  }
-                />
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span
+                    style={{
+                      fontFamily: font.body,
+                      fontSize: 11,
+                      color: C.muted,
+                      background: C.bg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      padding: "2px 8px",
+                    }}
+                  >
+                    {CATEGORY_ICONS[item.category ?? "FOOD"]}{" "}
+                    {CATEGORY_LABELS[item.category ?? "FOOD"]}
+                  </span>
+                  <Badge
+                    label={statusOf(item)}
+                    color={item.isAvailable ? "success" : "danger"}
+                  />
+                </div>
               </div>
 
               {/* BUTTONS */}
@@ -271,44 +289,39 @@ export default function MenuPage() {
                   flexWrap: "wrap",
                 }}
               >
-                <Btn
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setSelectedId(item.id);
-                    setDraftMode("edit");
-                    setDraft({
-                      itemName: item.itemName,
-                      description:
-                        item.description ?? "",
-                      price: item.price,
-                      imageUrl:
-                        item.imageUrl ?? "",
-                      isAvailable:
-                        item.isAvailable,
-                    });
-                    setShowModal(true);
-                  }}
-                >
-                  Edit
-                </Btn>
+                {canManageMenu && (
+                  <>
+                    <Btn
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedId(item.id);
+                        setDraftMode("edit");
+                        setDraft({
+                          itemName: item.itemName,
+                          description: item.description ?? "",
+                          price: item.price,
+                          category: item.category ?? "FOOD",
+                          imageUrl: item.imageUrl ?? "",
+                          isAvailable: item.isAvailable,
+                        });
+                        setShowModal(true);
+                      }}
+                    >
+                      Edit
+                    </Btn>
 
-                <Btn
-                  size="sm"
-                  variant="danger"
-                  onClick={() =>
-                    deleteItem(item.id)
-                  }
-                >
-                  Delete
-                </Btn>
+                    <Btn
+                      size="sm"
+                      variant="danger"
+                      onClick={() => deleteItem(item.id)}
+                    >
+                      Delete
+                    </Btn>
+                  </>
+                )}
 
-                <Btn
-                  size="sm"
-                  onClick={() =>
-                    openIngredients(item.id)
-                  }
-                >
+                <Btn size="sm" onClick={() => openIngredients(item.id)}>
                   Ingredients
                 </Btn>
               </div>
@@ -321,11 +334,7 @@ export default function MenuPage() {
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
-        title={
-          draftMode === "add"
-            ? "Create Menu Item"
-            : "Edit Menu Item"
-        }
+        title={draftMode === "add" ? "Create Menu Item" : "Edit Menu Item"}
       >
         <div style={{ display: "grid", gap: 12 }}>
           <Input
@@ -361,6 +370,46 @@ export default function MenuPage() {
               }))
             }
           />
+
+          <div>
+            <label
+              style={{
+                fontFamily: font.body,
+                fontSize: 13,
+                fontWeight: 500,
+                display: "block",
+                marginBottom: 6,
+                color: C.text,
+              }}
+            >
+              Category
+            </label>
+            <select
+              value={draft.category}
+              onChange={(e) =>
+                setDraft((p) => ({
+                  ...p,
+                  category: e.target.value as MenuCategory,
+                }))
+              }
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                fontFamily: font.body,
+                fontSize: 13,
+                color: C.text,
+                background: C.surface,
+              }}
+            >
+              {MENU_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {CATEGORY_ICONS[cat]} {CATEGORY_LABELS[cat]}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <Input
             label="Image URL"
@@ -398,9 +447,7 @@ export default function MenuPage() {
           </div>
 
           <Btn onClick={saveItem}>
-            {draftMode === "add"
-              ? "Create"
-              : "Update"}
+            {draftMode === "add" ? "Create" : "Update"}
           </Btn>
         </div>
       </Modal>
@@ -408,9 +455,7 @@ export default function MenuPage() {
       {/* ================= INGREDIENTS ================= */}
       <Modal
         open={showIngredientsModal}
-        onClose={() =>
-          setShowIngredientsModal(false)
-        }
+        onClose={() => setShowIngredientsModal(false)}
         title="Ingredients"
       >
         {ingredients.length === 0 ? (
@@ -418,8 +463,8 @@ export default function MenuPage() {
         ) : (
           ingredients.map((i) => (
             <div key={i.id}>
-              {i.inventory_itemName} —{" "}
-              {i.quantity_required}
+              {/* ✅ Change these to match whatever properties actually exist in menuApi's MenuIngredient */}
+              {i.inventoryItemName} — {i.quantityRequired}
             </div>
           ))
         )}

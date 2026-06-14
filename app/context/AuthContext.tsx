@@ -1,17 +1,26 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import type { User } from "../types";
+import type { Role, User } from "../types";
 import { api } from "../lib/axios";
 
 interface AuthResult {
   success: boolean;
   message?: string;
+  role?: Role;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<AuthResult>;
-  register: (username: string, password: string, fullName: string, phoneNumber?: string) => Promise<AuthResult>;
+  login: (
+    username: string,
+    password: string,
+  ) => Promise<{ success: boolean; message?: string; role?: Role }>;
+  register: (
+    username: string,
+    password: string,
+    fullName: string,
+    phoneNumber?: string,
+  ) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
 }
 
@@ -38,11 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
   };
 
-  const login = async (username: string, password: string): Promise<AuthResult> => {
+  const login = async (
+    username: string,
+    password: string,
+  ): Promise<AuthResult> => {
     try {
       const { data } = await api.post("/auth/login", { username, password });
       handleAuthResponse(data);
-      return { success: true };
+      return { success: true, role: data.role };
     } catch (err: any) {
       const message =
         err.response?.data?.message ||
@@ -51,12 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message };
     }
   };
-
   const register = async (
     username: string,
     password: string,
     fullName: string,
-    phoneNumber?: string
+    phoneNumber?: string,
   ): Promise<AuthResult> => {
     try {
       const { data } = await api.post("/auth/register", {
