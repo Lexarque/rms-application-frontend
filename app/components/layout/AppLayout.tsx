@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet, useLocation, useNavigate, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
-import { ROLE_ACCESS, NAV_ITEMS, PAGE_TITLES } from "../../config/navigation";
+import { ROLE_ACCESS, getActiveNavKey, getPageTitle } from "../../config/navigation";
 import { C, font } from "../../theme/tokens";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
@@ -19,10 +19,9 @@ export default function AppLayout() {
   }
 
   const allowed = ROLE_ACCESS[user.role] || [];
-  const currentKey =
-    NAV_ITEMS.find((n) => n.route === location.pathname)?.key || "dashboard";
+  const currentKey = getActiveNavKey(location.pathname);
   const hasAccess = allowed.includes(currentKey);
-  const title = PAGE_TITLES[location.pathname] || "Dashboard";
+  const title = getPageTitle(location.pathname);
 
   return (
     <div

@@ -1,6 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { SectionHeader } from "../../components/ui/SectionHeader";
-import { C } from "../../theme/tokens";
+import { useEffect, useMemo, useState } from "react";
 import {
   adjustInventoryQuantity,
   createInventoryItem,
@@ -13,39 +11,22 @@ import type {
   DraftItem,
   InventoryItem,
   InventoryMovement,
-  InventoryTab,
   MovementType,
   StatusFilter,
 } from "../../types/inventory";
-import { AlertsTab } from "./components/AlertsTab";
-import { CatalogTab } from "./components/CatalogTab";
-import { MovementTab } from "./components/MovementTab";
-import { InventoryStyles } from "./styles";
-import {
-  ITEM_TEMPLATE,
-  currentMonth,
-  errorText,
-  isValidMovementType,
-  nowStamp,
-  statusOf,
-} from "./utils";
+import { ITEM_TEMPLATE, currentMonth, errorText, isValidMovementType, nowStamp, statusOf } from "./utils";
 
-export default function InventoryPage() {
-  type MovementDraftLine = {
-    id: string;
-    itemId: string;
-    itemName: string;
-    unit: string;
-    movementType: MovementType;
-    quantity: number;
-    note: string;
-  };
+export type MovementDraftLine = {
+  id: string;
+  itemId: string;
+  itemName: string;
+  unit: string;
+  movementType: MovementType;
+  quantity: number;
+  note: string;
+};
 
-  const [activeTab, setActiveTab] = useState<InventoryTab>(() => {
-    if (typeof window === "undefined") return "catalog";
-    const saved = window.localStorage.getItem("inventory.activeTab");
-    return saved === "movement" ? "movement" : "catalog";
-  });
+export function useInventoryModule() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [query, setQuery] = useState("");
   const [monthFilter, setMonthFilter] = useState(currentMonth());
@@ -102,10 +83,6 @@ export default function InventoryPage() {
   }, [items, movementItemQuery]);
 
   useEffect(() => {
-    window.localStorage.setItem("inventory.activeTab", activeTab);
-  }, [activeTab]);
-
-  useEffect(() => {
     const loadItems = async () => {
       try {
         const mapped = await fetchInventoryItems();
@@ -138,7 +115,7 @@ export default function InventoryPage() {
   };
 
   const openEdit = () => {
-    if (!selectedItem) return;
+    if (!selectedItem) return false;
     setDraftMode("edit");
     setDraftItem({
       item_name: selectedItem.item_name,
@@ -149,8 +126,23 @@ export default function InventoryPage() {
     });
   };
 
-  const saveDraft = async () => {
-    if (!draftItem.item_name.trim()) return;
+  const openEditItem = (itemId: string) => {
+    const item = items.find((entry) => entry.id === itemId);
+    if (!item) return false;
+    setSelectedId(item.id);
+    setDraftMode("edit");
+    setDraftItem({
+      item_name: item.item_name,
+      category: item.category,
+      unit: item.unit,
+      quantity: item.quantity,
+      minimum_threshold: item.minimum_threshold,
+    });
+    return true;
+  };
+
+  const saveDraft = async (): Promise<boolean> => {
+    if (!draftItem.item_name.trim()) return false;
     setErrorMessage("");
     const quantity = draftItem.quantity === "" ? 0 : draftItem.quantity;
     const minimumThreshold =
@@ -168,11 +160,12 @@ export default function InventoryPage() {
         setDraftMode("edit");
       } catch {
         setErrorMessage("Failed to create inventory item.");
+        return false;
       }
-      return;
+      return true;
     }
 
-    if (!selectedItem) return;
+    if (!selectedItem) return false;
     try {
       await updateInventoryItem(selectedItem.id, {
         itemName: draftItem.item_name,
@@ -181,7 +174,7 @@ export default function InventoryPage() {
       });
     } catch {
       setErrorMessage("Failed to update inventory item.");
-      return;
+      return false;
     }
 
     setItems((prev) =>
@@ -197,6 +190,7 @@ export default function InventoryPage() {
           : item
       )
     );
+    return true;
   };
 
   const deleteSelected = async () => {
@@ -215,13 +209,32 @@ export default function InventoryPage() {
     setSelectedId(remaining[0]?.id ?? "");
   };
 
+  const deleteInventoryById = async (itemId: string) => {
+    const item = items.find((entry) => entry.id === itemId);
+    if (!item) return false;
+    setSelectedId(item.id);
+    setErrorMessage("");
+
+    try {
+      await deleteInventoryItem(item.id);
+    } catch {
+      setErrorMessage("Failed to delete inventory item.");
+      return false;
+    }
+
+    const remaining = items.filter((entry) => entry.id !== item.id);
+    setItems(remaining);
+    setSelectedId(remaining[0]?.id ?? "");
+    return true;
+  };
+
   const addMovementLine = () => {
     if (!selectedItem?.id) {
       setErrorMessage("Invalid inventory item selected.");
       return false;
     }
     if (!isValidMovementType(adjustType)) {
-      setErrorMessage("Invalid movement type. Use IN, OUT, or ADJUST.");
+      setErrorMessage("Invalid movement type. Use IN or OUT.");
       return false;
     }
     const qty = Number(adjustQty);
@@ -316,106 +329,46 @@ export default function InventoryPage() {
     }
   };
 
-  return (
-    <div>
-      <SectionHeader
-        title="Inventory Module"
-        subtitle="Manage stock catalog, post movements, and monitor low-stock risk in one workspace"
-      />
-
-      <div className="inv-kpi-row">
-        <div className="inv-kpi-card">
-          <span>Total Units On Hand</span>
-          <strong>{metrics.totalQty.toLocaleString()}</strong>
-        </div>
-        <div className="inv-kpi-card">
-          <span>Available</span>
-          <strong style={{ color: C.success }}>{metrics.available}</strong>
-        </div>
-        <div className="inv-kpi-card">
-          <span>Low Stock</span>
-          <strong style={{ color: C.warning }}>{metrics.low}</strong>
-        </div>
-        <div className="inv-kpi-card">
-          <span>Out of Stock</span>
-          <strong style={{ color: C.danger }}>{metrics.out}</strong>
-        </div>
-      </div>
-
-      <div className="inv-tabs">
-        {([
-          ["catalog", "Catalog"],
-          ["movement", "Stock Movement"],
-        ] as [InventoryTab, string][]).map(([tab, label]) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={activeTab === tab ? "inv-tab active" : "inv-tab"}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {errorMessage && <div className="inv-error">{errorMessage}</div>}
-
-      {activeTab === "catalog" && (
-        <>
-          <CatalogTab
-            selectedItem={selectedItem}
-            filteredItems={filteredItems}
-            draftItem={draftItem}
-            draftMode={draftMode}
-            statusFilter={statusFilter}
-            query={query}
-            setStatusFilter={setStatusFilter}
-            setQuery={setQuery}
-            setSelectedId={setSelectedId}
-            setDraftItem={setDraftItem}
-            onOpenAdd={openAdd}
-            onOpenEdit={openEdit}
-            onDelete={deleteSelected}
-            onSave={saveDraft}
-          />
-          <div style={{ marginTop: 14 }}>
-            <AlertsTab
-              outItems={outItems}
-              monthMovements={monthMovements}
-              items={items}
-              monthFilter={monthFilter}
-              setMonthFilter={setMonthFilter}
-            />
-          </div>
-        </>
-      )}
-
-      {activeTab === "movement" && (
-        <MovementTab
-          items={items}
-          selectedId={selectedId}
-          selectedItem={selectedItem}
-          movementItemQuery={movementItemQuery}
-          movementItemOptions={movementItemOptions}
-          adjustType={adjustType}
-          adjustNote={adjustNote}
-          monthFilter={monthFilter}
-          selectedMovements={selectedMovements}
-          setSelectedId={setSelectedId}
-          setMovementItemQuery={setMovementItemQuery}
-          setAdjustType={setAdjustType}
-          adjustQty={adjustQty}
-          setAdjustQty={setAdjustQty}
-          setAdjustNote={setAdjustNote}
-          movementLines={movementLines}
-          setMonthFilter={setMonthFilter}
-          onAddMovementLine={addMovementLine}
-          onRemoveMovementLine={removeMovementLine}
-          onClearMovementLines={clearMovementLines}
-          onSubmitMovementLines={submitMovementLines}
-        />
-      )}
-
-      <InventoryStyles />
-    </div>
-  );
+  return {
+    statusFilter,
+    setStatusFilter,
+    query,
+    setQuery,
+    monthFilter,
+    setMonthFilter,
+    items,
+    movements,
+    selectedId,
+    setSelectedId,
+    draftMode,
+    draftItem,
+    setDraftItem,
+    adjustQty,
+    setAdjustQty,
+    adjustType,
+    setAdjustType,
+    adjustNote,
+    setAdjustNote,
+    movementItemQuery,
+    setMovementItemQuery,
+    movementLines,
+    errorMessage,
+    selectedItem,
+    metrics,
+    filteredItems,
+    monthMovements,
+    selectedMovements,
+    outItems,
+    movementItemOptions,
+    openAdd,
+    openEdit,
+    openEditItem,
+    saveDraft,
+    deleteSelected,
+    deleteInventoryById,
+    addMovementLine,
+    removeMovementLine,
+    clearMovementLines,
+    submitMovementLines,
+  };
 }

@@ -24,7 +24,9 @@ export default [
   layout("components/layout/AppLayout.tsx", [
     index("pages/DashboardPage.tsx"),
     route("menu", "pages/MenuPage.tsx"),
-    route("inventory", "pages/inventory/InventoryPage.tsx"),
+    route("inventory", "pages/inventory/InventoryRedirectPage.tsx"),
+    route("inventory/catalog", "pages/inventory/InventoryCatalogPage.tsx"),
+    route("inventory/movement", "pages/inventory/InventoryMovementPage.tsx"),
     route("reports", "pages/ReportsPage.tsx"),
 
     layout("components/layout/StaffLayout.tsx", [
