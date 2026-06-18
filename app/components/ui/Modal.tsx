@@ -27,13 +27,14 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
       <div
         style={{
           background: C.surface,
-          borderRadius: 16,
-          padding: "28px 28px 24px",
+          borderRadius: 14,
+          padding: "22px 22px 20px",
           width: "100%",
           maxWidth: 480,
           maxHeight: "90vh",
           overflowY: "auto",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+          boxShadow: "0 10px 30px rgba(15,23,42,0.12)",
+          border: `1px solid ${C.border}`,
         }}
         onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
       >
@@ -48,7 +49,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
           <span
             style={{
               fontFamily: font.display,
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: 600,
               color: C.text,
             }}
@@ -61,7 +62,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
               background: "none",
               border: "none",
               cursor: "pointer",
-              fontSize: 18,
+              fontSize: 16,
               color: C.muted,
             }}
           >

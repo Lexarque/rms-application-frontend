@@ -6,11 +6,12 @@ interface TableProps {
   rows: React.ReactNode[][];
   emptyMessage?: string;
   onRowClick?: (rowIndex: number) => void; // Add this
+  className?: string;
 }
 
-export function Table({ columns, rows, emptyMessage = "No data.", onRowClick }: TableProps) {
+export function Table({ columns, rows, emptyMessage = "No data.", onRowClick, className }: TableProps) {
   return (
-    <div style={{ overflowX: "auto" }}>
+    <div className={className} style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: font.body, fontSize: 13 }}>
         <thead>
           <tr style={{ borderBottom: `0.5px solid ${C.border}`, background: "#FAFAF8" }}>

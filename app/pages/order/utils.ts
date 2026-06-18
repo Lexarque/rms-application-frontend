@@ -1,4 +1,4 @@
-import { C } from "~/theme/tokens";
+import type { BadgeColor } from "~/components/ui/Badge";
 import type { OrderStatus } from "~/types/order";
 
 export function formatCurrency(amount: number | null): string {
@@ -16,19 +16,19 @@ export function formatDate(value: string): string {
   });
 }
 
-const STATUS_COLORS: Record<OrderStatus, string> = {
-  DRAFT: C.muted,
-  PENDING: C.warning,
-  CONFIRMED: C.info,
-  PREPARING: C.accent,
-  READY: C.success,
-  SERVED: C.info,
-  COMPLETED: C.success,
-  CANCELLED: C.danger,
+const STATUS_COLORS: Record<OrderStatus, BadgeColor> = {
+  DRAFT: "default",
+  PENDING: "warning",
+  CONFIRMED: "info",
+  PREPARING: "gold",
+  READY: "success",
+  SERVED: "info",
+  COMPLETED: "success",
+  CANCELLED: "danger",
 };
 
-export function getStatusColor(status: OrderStatus): string {
-  return STATUS_COLORS[status] ?? C.muted;
+export function getStatusColor(status: OrderStatus): BadgeColor {
+  return STATUS_COLORS[status] ?? "default";
 }
 
 export const ORDER_STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
