@@ -5,7 +5,6 @@ import { Badge } from "../components/ui/Badge";
 import { Btn } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
-import { useAuth } from "../context/AuthContext";
 
 import {
   fetchMenuItems,
@@ -13,12 +12,13 @@ import {
   updateMenuItem,
   deleteMenuItem,
   fetchMenuIngredients,
+  addMenuIngredient,
+  deleteMenuIngredient,
   type MenuCategory,
-  type MenuIngredient,
-  CATEGORY_LABELS,
-  CATEGORY_ICONS,
-  MENU_CATEGORIES,
 } from "../queries/menu/menuApi";
+import { useInventoryItems } from "../hooks/useInventoryItems";
+
+import { CATEGORY_ICONS, CATEGORY_LABELS } from "~/queries/menu/menuApi";
 
 type MenuStatus = "AVAILABLE" | "UNAVAILABLE";
 
@@ -27,9 +27,18 @@ interface MenuItem {
   itemName: string;
   description?: string;
   price: number;
-  category?: MenuCategory;
+  category: MenuCategory;
   imageUrl?: string;
   isAvailable: boolean;
+}
+
+interface MenuIngredient {
+  id: string;
+  inventoryId: string;
+  inventoryItemName: string;
+  quantityRequired: number;
+  availableQuantity: number;
+  sufficient: boolean;
 }
 
 type Draft = {
@@ -55,8 +64,6 @@ function statusOf(item: MenuItem): MenuStatus {
 }
 
 export default function MenuPage() {
-  const { user } = useAuth();
-
   const [items, setItems] = useState<MenuItem[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
 
@@ -69,16 +76,23 @@ export default function MenuPage() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Ingredient picker state (used inside the create/edit modal)
+  const { data: inventoryItems = [] } = useInventoryItems();
+  const [pendingIngredients, setPendingIngredients] = useState<{
+    inventoryId: string;
+    inventoryItemName: string;
+    quantityRequired: number;
+  }[]>([]);
+  const [ingredientPick, setIngredientPick] = useState("");
+  const [ingredientQty, setIngredientQty] = useState(1);
+
   const selectedItem = items.find((i) => i.id === selectedId) ?? null;
-  const canManageMenu = user?.role === "admin" || user?.role === "manager";
 
   /* ================= LOAD ================= */
   useEffect(() => {
     const load = async () => {
       try {
         const data = await fetchMenuItems();
-
-        // Defensive fix: ensure array
         if (Array.isArray(data)) {
           setItems(data);
           setSelectedId(data[0]?.id ?? "");
@@ -89,9 +103,38 @@ export default function MenuPage() {
         setErrorMessage("Failed to load menu items.");
       }
     };
-
     void load();
   }, []);
+
+  /* ================= INGREDIENT PICKER (within modal) ================= */
+  const addPendingIngredient = () => {
+    if (!ingredientPick || ingredientQty <= 0) return;
+    const inv = inventoryItems.find((i) => i.id === ingredientPick);
+    if (!inv) return;
+
+    if (pendingIngredients.some((p) => p.inventoryId === ingredientPick)) {
+      setErrorMessage("This ingredient is already added.");
+      return;
+    }
+
+    setPendingIngredients((prev) => [
+      ...prev,
+      {
+        inventoryId: inv.id,
+        inventoryItemName: inv.itemName,
+        quantityRequired: ingredientQty,
+      },
+    ]);
+    setIngredientPick("");
+    setIngredientQty(1);
+    setErrorMessage("");
+  };
+
+  const removePendingIngredient = (inventoryId: string) => {
+    setPendingIngredients((prev) =>
+      prev.filter((p) => p.inventoryId !== inventoryId),
+    );
+  };
 
   /* ================= SAVE ================= */
   const saveItem = async () => {
@@ -101,8 +144,10 @@ export default function MenuPage() {
     }
 
     try {
+      let savedItem: MenuItem;
+
       if (draftMode === "add") {
-        const created = await createMenuItem({
+        savedItem = await createMenuItem({
           itemName: draft.itemName,
           description: draft.description,
           price: draft.price,
@@ -111,10 +156,10 @@ export default function MenuPage() {
           isAvailable: draft.isAvailable,
         });
 
-        setItems((prev) => [created, ...prev]);
-        setSelectedId(created.id);
+        setItems((prev) => [savedItem, ...prev]);
+        setSelectedId(savedItem.id);
       } else if (selectedItem) {
-        const updated = await updateMenuItem(selectedItem.id, {
+        savedItem = await updateMenuItem(selectedItem.id, {
           itemName: draft.itemName,
           description: draft.description,
           price: draft.price,
@@ -124,12 +169,30 @@ export default function MenuPage() {
         });
 
         setItems((prev) =>
-          prev.map((i) => (i.id === selectedItem.id ? updated : i)),
+          prev.map((i) => (i.id === selectedItem.id ? savedItem : i)),
         );
+      } else {
+        return;
+      }
+
+      // Persist any newly-added ingredients (add mode only;
+      // edit mode ingredients are managed via the Ingredients modal instead)
+      if (draftMode === "add" && pendingIngredients.length > 0) {
+        for (const ing of pendingIngredients) {
+          try {
+            await addMenuIngredient(savedItem.id, {
+              inventoryId: ing.inventoryId,
+              quantityRequired: ing.quantityRequired,
+            });
+          } catch {
+            // continue attempting the rest even if one fails
+          }
+        }
       }
 
       setShowModal(false);
       setDraft(EMPTY_DRAFT);
+      setPendingIngredients([]);
       setErrorMessage("");
     } catch {
       setErrorMessage("Failed to save menu item.");
@@ -140,10 +203,8 @@ export default function MenuPage() {
   const deleteItem = async (id: string) => {
     try {
       await deleteMenuItem(id);
-
       const remaining = items.filter((i) => i.id !== id);
       setItems(remaining);
-
       if (selectedId === id) {
         setSelectedId(remaining[0]?.id ?? "");
       }
@@ -152,17 +213,25 @@ export default function MenuPage() {
     }
   };
 
-  /* ================= INGREDIENTS ================= */
+  /* ================= INGREDIENTS (view/manage existing item) ================= */
   const openIngredients = async (id: string) => {
     try {
       setSelectedId(id);
       const data = await fetchMenuIngredients(id);
-
-      // ✅ No cast needed if fetchMenuIngredients is typed properly in menuApi.ts
       setIngredients(Array.isArray(data) ? data : []);
       setShowIngredientsModal(true);
     } catch {
       setErrorMessage("Failed to load ingredients.");
+    }
+  };
+
+  const removeIngredient = async (ingredientId: string) => {
+    if (!selectedId) return;
+    try {
+      await deleteMenuIngredient(selectedId, ingredientId);
+      setIngredients((prev) => prev.filter((i) => i.id !== ingredientId));
+    } catch {
+      setErrorMessage("Failed to remove ingredient.");
     }
   };
 
@@ -172,17 +241,16 @@ export default function MenuPage() {
         title="Menu Management"
         subtitle="Manage menu items and ingredients"
         action={
-          canManageMenu && (
-            <Btn
-              onClick={() => {
-                setDraftMode("add");
-                setDraft(EMPTY_DRAFT);
-                setShowModal(true);
-              }}
-            >
-              + Add Item
-            </Btn>
-          )
+          <Btn
+            onClick={() => {
+              setDraftMode("add");
+              setDraft(EMPTY_DRAFT);
+              setPendingIngredients([]);
+              setShowModal(true);
+            }}
+          >
+            + Add Item
+          </Btn>
         }
       />
 
@@ -210,17 +278,12 @@ export default function MenuPage() {
               flexDirection: "column",
             }}
           >
-            {/* IMAGE */}
             <div style={{ height: 180, background: "#eee" }}>
               {item.imageUrl ? (
                 <img
                   src={item.imageUrl}
                   alt={item.itemName}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (
                 <div
@@ -280,7 +343,6 @@ export default function MenuPage() {
                 </div>
               </div>
 
-              {/* BUTTONS */}
               <div
                 style={{
                   display: "flex",
@@ -289,37 +351,34 @@ export default function MenuPage() {
                   flexWrap: "wrap",
                 }}
               >
-                {canManageMenu && (
-                  <>
-                    <Btn
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedId(item.id);
-                        setDraftMode("edit");
-                        setDraft({
-                          itemName: item.itemName,
-                          description: item.description ?? "",
-                          price: item.price,
-                          category: item.category ?? "FOOD",
-                          imageUrl: item.imageUrl ?? "",
-                          isAvailable: item.isAvailable,
-                        });
-                        setShowModal(true);
-                      }}
-                    >
-                      Edit
-                    </Btn>
+                <Btn
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setSelectedId(item.id);
+                    setDraftMode("edit");
+                    setDraft({
+                      itemName: item.itemName,
+                      description: item.description ?? "",
+                      price: item.price,
+                      category: item.category,
+                      imageUrl: item.imageUrl ?? "",
+                      isAvailable: item.isAvailable,
+                    });
+                    setPendingIngredients([]);
+                    setShowModal(true);
+                  }}
+                >
+                  Edit
+                </Btn>
 
-                    <Btn
-                      size="sm"
-                      variant="danger"
-                      onClick={() => deleteItem(item.id)}
-                    >
-                      Delete
-                    </Btn>
-                  </>
-                )}
+                <Btn
+                  size="sm"
+                  variant="danger"
+                  onClick={() => deleteItem(item.id)}
+                >
+                  Delete
+                </Btn>
 
                 <Btn size="sm" onClick={() => openIngredients(item.id)}>
                   Ingredients
@@ -330,7 +389,7 @@ export default function MenuPage() {
         ))}
       </div>
 
-      {/* ================= MODAL ================= */}
+      {/* ================= CREATE / EDIT MODAL ================= */}
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
@@ -341,10 +400,7 @@ export default function MenuPage() {
             label="Item Name *"
             value={draft.itemName}
             onChange={(e) =>
-              setDraft((p) => ({
-                ...p,
-                itemName: e.target.value,
-              }))
+              setDraft((p) => ({ ...p, itemName: e.target.value }))
             }
           />
 
@@ -352,10 +408,7 @@ export default function MenuPage() {
             label="Description"
             value={draft.description}
             onChange={(e) =>
-              setDraft((p) => ({
-                ...p,
-                description: e.target.value,
-              }))
+              setDraft((p) => ({ ...p, description: e.target.value }))
             }
           />
 
@@ -364,10 +417,7 @@ export default function MenuPage() {
             type="number"
             value={draft.price}
             onChange={(e) =>
-              setDraft((p) => ({
-                ...p,
-                price: Number(e.target.value),
-              }))
+              setDraft((p) => ({ ...p, price: Number(e.target.value) }))
             }
           />
 
@@ -403,11 +453,12 @@ export default function MenuPage() {
                 background: C.surface,
               }}
             >
-              {MENU_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_ICONS[cat]} {CATEGORY_LABELS[cat]}
-                </option>
-              ))}
+              <option value="FOOD">🍛 Food</option>
+              <option value="BEVERAGE">🥤 Beverage</option>
+              <option value="DESSERT">🍰 Dessert</option>
+              <option value="SNACK">🍟 Snack</option>
+              <option value="SET_MEAL">🍱 Set Meal</option>
+              <option value="SEASONAL">🌿 Seasonal</option>
             </select>
           </div>
 
@@ -415,14 +466,10 @@ export default function MenuPage() {
             label="Image URL"
             value={draft.imageUrl}
             onChange={(e) =>
-              setDraft((p) => ({
-                ...p,
-                imageUrl: e.target.value,
-              }))
+              setDraft((p) => ({ ...p, imageUrl: e.target.value }))
             }
           />
 
-          {/* FIXED: ALWAYS VISIBLE HEADER */}
           <div
             style={{
               display: "flex",
@@ -435,10 +482,7 @@ export default function MenuPage() {
               type="checkbox"
               checked={draft.isAvailable}
               onChange={(e) =>
-                setDraft((p) => ({
-                  ...p,
-                  isAvailable: e.target.checked,
-                }))
+                setDraft((p) => ({ ...p, isAvailable: e.target.checked }))
               }
             />
             <label style={{ fontWeight: 500, color: "#333" }}>
@@ -446,27 +490,198 @@ export default function MenuPage() {
             </label>
           </div>
 
+          {/* ===== Ingredient picker — add mode only ===== */}
+          {draftMode === "add" && (
+            <div
+              style={{
+                marginTop: 8,
+                paddingTop: 14,
+                borderTop: `1px solid ${C.border}`,
+              }}
+            >
+              <label
+                style={{
+                  fontFamily: font.body,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  display: "block",
+                  marginBottom: 8,
+                  color: C.text,
+                }}
+              >
+                Ingredients (optional)
+              </label>
+
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                <select
+                  value={ingredientPick}
+                  onChange={(e) => setIngredientPick(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    fontFamily: font.body,
+                    fontSize: 13,
+                    color: C.text,
+                    background: C.surface,
+                  }}
+                >
+                  <option value="">Select inventory item...</option>
+                  {inventoryItems
+                    .filter(
+                      (inv) =>
+                        !pendingIngredients.some(
+                          (p) => p.inventoryId === inv.id,
+                        ),
+                    )
+                    .map((inv) => (
+                      <option key={inv.id} value={inv.id}>
+                        {inv.itemName} (stock: {inv.quantity})
+                      </option>
+                    ))}
+                </select>
+
+                <input
+                  type="number"
+                  min={1}
+                  value={ingredientQty}
+                  onChange={(e) => setIngredientQty(Number(e.target.value))}
+                  style={{
+                    width: 70,
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    fontFamily: font.body,
+                    fontSize: 13,
+                    color: C.text,
+                  }}
+                />
+
+                <Btn size="sm" variant="ghost" onClick={addPendingIngredient}>
+                  Add
+                </Btn>
+              </div>
+
+              {pendingIngredients.length === 0 ? (
+                <p
+                  style={{
+                    fontFamily: font.body,
+                    fontSize: 12,
+                    color: C.muted,
+                  }}
+                >
+                  No ingredients added — item will always show as available.
+                </p>
+              ) : (
+                <div style={{ display: "grid", gap: 6 }}>
+                  {pendingIngredients.map((ing) => (
+                    <div
+                      key={ing.inventoryId}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        background: C.bg,
+                        border: `1px solid ${C.border}`,
+                        fontFamily: font.body,
+                        fontSize: 12,
+                        color: C.text,
+                      }}
+                    >
+                      <span>
+                        {ing.inventoryItemName} × {ing.quantityRequired}
+                      </span>
+                      <button
+                        onClick={() => removePendingIngredient(ing.inventoryId)}
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          color: C.danger,
+                          cursor: "pointer",
+                          fontSize: 13,
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {draftMode === "edit" && (
+            <p
+              style={{
+                fontFamily: font.body,
+                fontSize: 12,
+                color: C.muted,
+                marginTop: 4,
+              }}
+            >
+              Use the "Ingredients" button on the card to manage ingredients for
+              existing items.
+            </p>
+          )}
+
           <Btn onClick={saveItem}>
             {draftMode === "add" ? "Create" : "Update"}
           </Btn>
         </div>
       </Modal>
 
-      {/* ================= INGREDIENTS ================= */}
+      {/* ================= INGREDIENTS MODAL (existing items) ================= */}
       <Modal
         open={showIngredientsModal}
         onClose={() => setShowIngredientsModal(false)}
         title="Ingredients"
       >
         {ingredients.length === 0 ? (
-          <div>No ingredients</div>
+          <div style={{ fontFamily: font.body, fontSize: 13, color: C.muted }}>
+            No ingredients
+          </div>
         ) : (
-          ingredients.map((i) => (
-            <div key={i.id}>
-              {/* ✅ Change these to match whatever properties actually exist in menuApi's MenuIngredient */}
-              {i.inventoryItemName} — {i.quantityRequired}
-            </div>
-          ))
+          <div style={{ display: "grid", gap: 8 }}>
+            {ingredients.map((i) => (
+              <div
+                key={i.id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                  fontFamily: font.body,
+                  fontSize: 13,
+                  color: C.text,
+                }}
+              >
+                <span>
+                  {i.inventoryItemName} — needs {i.quantityRequired} (
+                  {i.sufficient
+                    ? "in stock"
+                    : `only ${i.availableQuantity} left`}
+                  )
+                </span>
+                <button
+                  onClick={() => removeIngredient(i.id)}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    color: C.danger,
+                    cursor: "pointer",
+                    fontSize: 13,
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </Modal>
     </div>
