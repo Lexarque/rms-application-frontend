@@ -33,9 +33,10 @@ export interface MenuItem {
   category: MenuCategory;
   imageUrl?: string;
   isAvailable: boolean;
-  stockAvailable: boolean;
-  ingredients: MenuIngredientInfo[];
-  lastUpdated?: string;
+
+  // backend derived
+  stockAvailable?: boolean;
+  ingredients?: MenuIngredientInfo[];
 }
 
 export interface CreateMenuItemRequest {
@@ -109,4 +110,9 @@ export async function addMenuIngredient(menuId: string, data: {
 
 export async function deleteMenuIngredient(menuId: string, ingredientId: string) {
   await api.delete(`/menu/${menuId}/ingredients/${ingredientId}`);
+}
+
+export async function fetchInventoryItems() {
+  const res = await api.get("/inventory");
+  return res.data;
 }

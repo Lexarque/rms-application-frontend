@@ -6,6 +6,8 @@ import { Btn } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
 import { useAuth } from "../context/AuthContext";
+import { fetchInventoryItems } from "../queries/inventory/inventoryApi";
+import { addMenuIngredient, deleteMenuIngredient } from "../queries/menu/menuApi";
 
 import {
   fetchMenuItems,
@@ -72,6 +74,12 @@ export default function MenuPage() {
   const selectedItem = items.find((i) => i.id === selectedId) ?? null;
   const canManageMenu = user?.role === "admin" || user?.role === "manager";
 
+  const [categoryFilter, setCategoryFilter] = useState<MenuCategory | "ALL">("ALL");
+  const [search, setSearch] = useState("");
+
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [linkedIngredients, setLinkedIngredients] = useState<MenuIngredient[]>([]);
+
   /* ================= LOAD ================= */
   useEffect(() => {
     const load = async () => {
@@ -91,6 +99,19 @@ export default function MenuPage() {
     };
 
     void load();
+  }, []);
+
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        const res = await fetchInventoryItems();
+        setInventoryItems(res);
+      } catch {
+        setErrorMessage("Failed to load inventory");
+      }
+    };
+
+    loadInventory();
   }, []);
 
   /* ================= SAVE ================= */
@@ -158,8 +179,21 @@ export default function MenuPage() {
       setSelectedId(id);
       const data = await fetchMenuIngredients(id);
 
-      // ✅ No cast needed if fetchMenuIngredients is typed properly in menuApi.ts
-      setIngredients(Array.isArray(data) ? data : []);
+      setLinkedIngredients(data);
+
+      setIngredients(
+        Array.isArray(data)
+          ? data.map((i) => ({
+              id: i.id,
+              inventoryId: i.inventoryId,
+              inventoryItemName: i.inventoryItemName,
+              quantityRequired: i.quantityRequired,
+              availableQuantity: i.availableQuantity,
+              sufficient: i.sufficient,
+            }))
+          : []
+      );
+      
       setShowIngredientsModal(true);
     } catch {
       setErrorMessage("Failed to load ingredients.");
@@ -198,7 +232,14 @@ export default function MenuPage() {
           gap: 20,
         }}
       >
-        {items.map((item) => (
+        {items
+          .filter((i) =>
+            categoryFilter === "ALL" ? true : i.category === categoryFilter
+          )
+          .filter((i) =>
+            i.itemName.toLowerCase().includes(search.toLowerCase())
+          ) 
+          .map((item) => (
           <div
             key={item.id}
             style={{
@@ -208,6 +249,8 @@ export default function MenuPage() {
               overflow: "hidden",
               display: "flex",
               flexDirection: "column",
+              opacity: item.isAvailable ? 1 : 0.4,
+              pointerEvents: "auto",
             }}
           >
             {/* IMAGE */}
@@ -456,17 +499,53 @@ export default function MenuPage() {
       <Modal
         open={showIngredientsModal}
         onClose={() => setShowIngredientsModal(false)}
-        title="Ingredients"
+        title="Manage Ingredients"
       >
-        {ingredients.length === 0 ? (
-          <div>No ingredients</div>
+        {canManageMenu ? (
+          <div>
+            {/* LIST ALL INVENTORY ITEMS AS CHECKBOXES */}
+            {inventoryItems.map((inv) => {
+              const isLinked = linkedIngredients.some(
+                (l) => l.inventoryId === inv.id
+              );
+
+              return (
+                <div key={inv.id} style={{ display: "flex", gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={isLinked}
+                    onChange={async () => {
+                      if (isLinked) {
+                        // REMOVE ingredient
+                        await deleteMenuIngredient(selectedId, inv.id);
+                      } else {
+                        // ADD ingredient
+                        await addMenuIngredient(selectedId, {
+                          inventoryId: inv.id?.toString(),
+                          quantityRequired: 1,
+                        });
+                      }
+
+                      // refresh
+                      const refreshed = await fetchMenuIngredients(selectedId);
+                      setLinkedIngredients(refreshed);
+                    }}
+                  />
+                  <span>
+                    {inv.item_name} (Stock: {inv.quantity})
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          ingredients.map((i) => (
-            <div key={i.id}>
-              {/* ✅ Change these to match whatever properties actually exist in menuApi's MenuIngredient */}
-              {i.inventoryItemName} — {i.quantityRequired}
-            </div>
-          ))
+          <div>
+            {ingredients.map((i) => (
+              <div key={i.id}>
+                {i.inventoryItemName} — {i.quantityRequired}
+              </div>
+            ))}
+          </div>
         )}
       </Modal>
     </div>
