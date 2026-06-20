@@ -75,42 +75,48 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Input
-            label="Username"
-            value={username}
-            onChange={(e: any) => setUsername(e.target.value)}
-            placeholder="Enter your username"
-            required
-          />
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e: any) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-          {error && (
-            <div
-              style={{
-                fontSize: 12,
-                color: C.danger,
-                padding: "8px 12px",
-                background: "#FCEBEB",
-                borderRadius: 8,
-              }}
-            >
-              {error}
-            </div>
-          )}
-          <Btn
-            onClick={handleSubmit}
-            disabled={loading || !username || !password}
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </Btn>
-        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!loading && username && password) {
+              handleSubmit();
+            }
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <Input
+              label="Username"
+              value={username}
+              onChange={(e: any) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              required
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e: any) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+            {error && (
+              <div
+                style={{
+                  fontSize: 12,
+                  color: C.danger,
+                  padding: "8px 12px",
+                  background: "#FCEBEB",
+                  borderRadius: 8,
+                }}
+              >
+                {error}
+              </div>
+            )}
+            <Btn type="submit" disabled={loading || !username || !password}>
+              {loading ? "Signing in…" : "Sign in"}
+            </Btn>
+          </div>
+        </form>
 
         <p
           style={{
