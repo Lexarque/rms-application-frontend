@@ -22,7 +22,7 @@ export default [
 
   // Main app with sidebar
   layout("components/layout/AppLayout.tsx", [
-    index("pages/DashboardPage.tsx"),
+    index("pages/dashboard/DashboardPage.tsx"),
     route("menu", "pages/MenuPage.tsx"),
     route("inventory", "pages/inventory/InventoryRedirectPage.tsx"),
     route("inventory/catalog", "pages/inventory/InventoryCatalogPage.tsx"),

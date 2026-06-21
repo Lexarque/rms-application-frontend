@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { Role, User } from "../types";
 import { api } from "../lib/axios";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthResult {
   success: boolean;
@@ -27,6 +28,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -91,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem("rms_user");
     localStorage.removeItem("token");
+    queryClient.clear();
   };
 
   return (

@@ -42,9 +42,6 @@ export default function OrderPage() {
       <SectionHeader
         title="Orders Management"
         subtitle="View and manage customer orders"
-        action={
-          <Btn onClick={() => navigate("/orders/create")}>+ New Order</Btn>
-        }
       />
       <OrderFilters
         value={searchInput}
