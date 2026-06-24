@@ -9,7 +9,7 @@ import type {
 export const ITEM_TEMPLATE: DraftItem = {
   item_name: "",
   category: "",
-  unit: "unit",
+  unit: "UNIT",
   quantity: 0,
   minimum_threshold: 0,
 };

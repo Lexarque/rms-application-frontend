@@ -7,6 +7,7 @@ import { InventoryStyles } from "./styles"
 import { CatalogTab } from "./components/CatalogTab"
 import { AlertsTab } from "./components/AlertsTab"
 import { useInventoryModule } from "./useInventoryModule"
+import { INVENTORY_UNIT_OPTIONS } from "../../types/inventory"
 
 export default function InventoryCatalogPage() {
     const inventory = useInventoryModule()
@@ -154,9 +155,28 @@ export default function InventoryCatalogPage() {
                                 }))
                             }}
                         />
+                        <div>
+                            <div className="inv-label">Unit Type</div>
+                            <select
+                                className="inv-control"
+                                value={inventory.draftItem.unit}
+                                onChange={(e) =>
+                                    inventory.setDraftItem((prev) => ({
+                                        ...prev,
+                                        unit: e.target.value,
+                                    }))
+                                }
+                            >
+                                {INVENTORY_UNIT_OPTIONS.map((unit) => (
+                                    <option key={unit} value={unit}>
+                                        {unit}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     <div className="inv-meta">
-                        Updates name, quantity, and threshold.
+                        Updates name, quantity, threshold, and unit type.
                     </div>
 
                     <div

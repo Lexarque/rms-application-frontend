@@ -11,6 +11,7 @@ import type {
   DraftItem,
   InventoryItem,
   InventoryMovement,
+  InventoryUnit,
   MovementType,
   StatusFilter,
 } from "../../types/inventory";
@@ -154,6 +155,7 @@ export function useInventoryModule() {
           itemName: draftItem.item_name,
           quantity,
           minimumThreshold,
+          unit: draftItem.unit as InventoryUnit,
         });
         setItems((prev) => [created, ...prev]);
         setSelectedId(created.id);
@@ -171,6 +173,7 @@ export function useInventoryModule() {
         itemName: draftItem.item_name,
         quantity,
         minimumThreshold,
+        unit: draftItem.unit as InventoryUnit,
       });
     } catch {
       setErrorMessage("Failed to update inventory item.");
