@@ -2,6 +2,34 @@ export type InventoryStatus = "AVAILABLE" | "LOW" | "OUT";
 export type StatusFilter = "ALL" | InventoryStatus;
 export type InventoryTab = "catalog" | "movement";
 export type MovementType = "IN" | "OUT" | "ADJUST";
+export type InventoryUnit =
+  | "KG"
+  | "GRAM"
+  | "LITRE"
+  | "MILLILITRE"
+  | "BOX"
+  | "CARTON"
+  | "PACK"
+  | "PIECE"
+  | "BOTTLE"
+  | "CAN"
+  | "BAG"
+  | "UNIT";
+
+export const INVENTORY_UNIT_OPTIONS: InventoryUnit[] = [
+  "KG",
+  "GRAM",
+  "LITRE",
+  "MILLILITRE",
+  "BOX",
+  "CARTON",
+  "PACK",
+  "PIECE",
+  "BOTTLE",
+  "CAN",
+  "BAG",
+  "UNIT",
+];
 
 export interface InventoryItem {
   id: string;
@@ -54,6 +82,7 @@ export interface InventoryItemApi {
   itemName: string;
   quantity: number;
   minimumThreshold: number;
+  unit: InventoryUnit;
   lastUpdated: string;
 }
 
@@ -61,12 +90,14 @@ export interface CreateInventoryPayload {
   itemName: string;
   quantity: number;
   minimumThreshold: number;
+  unit: InventoryUnit;
 }
 
 export interface UpdateInventoryPayload {
   itemName: string;
   quantity: number;
   minimumThreshold: number;
+  unit: InventoryUnit;
 }
 
 export interface AdjustInventoryQuantityPayload {

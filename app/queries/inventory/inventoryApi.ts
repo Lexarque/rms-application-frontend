@@ -15,7 +15,7 @@ function mapInventoryItem(row: InventoryItemApi): InventoryItem {
     id: row.id,
     item_name: row.itemName,
     category: "-",
-    unit: "unit",
+    unit: row.unit,
     quantity: row.quantity,
     minimum_threshold: row.minimumThreshold,
     last_updated: row.lastUpdated,
