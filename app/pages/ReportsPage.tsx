@@ -771,14 +771,6 @@ export default function ReportsPage() {
                 "Finalized orders handled by staff",
                 C.success,
               )}
-              {renderMetricCard(
-                "Most Active",
-                staffActivity[0]?.name ?? "-",
-                staffActivity[0]
-                  ? `${staffActivity[0].ordersHandled} orders handled`
-                  : "No staff activity yet",
-                C.warning,
-              )}
             </div>
 
             {staffQuery.isError && (

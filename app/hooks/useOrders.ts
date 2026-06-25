@@ -5,7 +5,9 @@ import type { OrderDto, OrderListParams, OrderStatus, OrderType } from "../types
 
 const fetchOrders = async (params: OrderListParams): Promise<OrderDto[]> => {
   const { data } = await api.get<OrderDto[]>("/orders", { params });
-  return data;
+  return [...data].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 };
 
 export function useOrders() {
@@ -37,6 +39,9 @@ export function useOrders() {
     queryKey: ["orders", params],
     queryFn: () => fetchOrders(params),
     placeholderData: (prev) => prev,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000,
   });
 
   return {
