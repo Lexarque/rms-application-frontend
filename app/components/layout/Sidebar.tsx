@@ -65,7 +65,7 @@ export function Sidebar({ route, navigate, user }: SidebarProps) {
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: "0 10px" }}>
-        {NAV_ITEMS.filter((item) => allowed.includes(item.key)).map((item) => {
+        {NAV_ITEMS.filter((item) => allowed.includes(item.key) && item.key !== "reports").map((item) => {
           const active = isRouteActive(item.route, route);
           const children = item.children ?? [];
           const showChildren = item.key === "inventory" && active;
